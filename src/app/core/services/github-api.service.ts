@@ -1,23 +1,18 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable, catchError, map, throwError } from 'rxjs';
+import { Observable, catchError, throwError } from 'rxjs';
 
 import {
   ContributionCalendar,
   ContributionDay,
-  ContributionsCollection,
   GithubEvent,
   GithubOrg,
   GithubRepo,
   GithubUser,
 } from '../models/github.models';
-import { GithubTokenService } from './github-token.service';
 
 /** Base URL of the GitHub REST API. */
 export const GITHUB_REST_API = 'https://api.github.com';
-
-/** Base URL of the GitHub GraphQL API. */
-export const GITHUB_GRAPHQL_API = 'https://api.github.com/graphql';
 
 /** Path prefix of the bundled REST proxy (`server/server.mjs`). */
 const REST_PROXY_PREFIX = '/api/github';
@@ -41,21 +36,13 @@ const REST_PROXY_PREFIX = '/api/github';
 @Injectable({ providedIn: 'root' })
 export class GithubApiService {
   private readonly http = inject(HttpClient);
-  private readonly tokens = inject(GithubTokenService);
 
   /** Headers sent with every REST call. */
   private restHeaders(): HttpHeaders {
-    let headers = new HttpHeaders({
+    return new HttpHeaders({
       Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
     });
-
-    const token = this.tokens.get();
-    if (token) {
-      headers = headers.set('Authorization', `Bearer ${token}`);
-    }
-
-    return headers;
   }
 
   /**
@@ -110,79 +97,6 @@ export class GithubApiService {
     return this.rest<GithubRepo[]>(`/users/${encodeURIComponent(username)}/starred`, {
       per_page: perPage,
     });
-  }
-
-  /**
-   * Official GitHub GraphQL query for the contribution calendar.
-   * Requires a personal access token; see `ContributionService` for the
-   * token-free fallback.
-   */
-  getContributionsCollection(
-    username: string,
-    from: string,
-    to: string,
-    token: string,
-  ): Observable<ContributionsCollection> {
-    // GraphQL requires an explicit range; fall back to the rolling year.
-    const today = new Date();
-    const defaultFrom = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .slice(0, 10);
-    const defaultTo = today.toISOString().slice(0, 10);
-    const start = from || defaultFrom;
-    const end = to || defaultTo;
-
-    const query = `
-      query Contributions($login: String!, $from: DateTime!, $to: DateTime!) {
-        user(login: $login) {
-          contributionsCollection(from: $from, to: $to) {
-            contributionCalendar {
-              totalContributions
-              weeks {
-                contributionDays {
-                  date
-                  contributionCount
-                }
-              }
-            }
-          }
-        }
-      }
-    `;
-
-    return this.http
-      .post<{
-        data?: {
-          user?: {
-            contributionsCollection?: {
-              contributionCalendar?: ContributionsCollection;
-            };
-          };
-        };
-      }>(
-        GITHUB_GRAPHQL_API,
-        {
-          query,
-          variables: { login: username, from: `${start}T00:00:00Z`, to: `${end}T23:59:59Z` },
-        },
-        {
-          headers: new HttpHeaders({
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            'User-Agent': 'UptimeAI-GitHub-Profile',
-          }),
-        },
-      )
-      .pipe(
-        map((res) => {
-          const calendar = res.data?.user?.contributionsCollection?.contributionCalendar;
-          if (!calendar) {
-            throw new Error('GitHub GraphQL returned no contribution calendar.');
-          }
-          return calendar;
-        }),
-      );
   }
 
   /**

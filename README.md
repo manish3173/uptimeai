@@ -33,6 +33,27 @@ Open <http://localhost:4200/>.
 The dev server proxies every `/api` request to the Node server
 (`proxy.conf.json`), so the browser only ever talks to one origin.
 
+### Vercel deployment
+
+The repository includes a Vercel function at
+`api/contributions/[username].mjs`. Use the repository root as the Vercel
+project root. The checked-in `vercel.json` configures:
+
+```text
+Build command: npm run build
+Output directory: dist/uptime/browser
+```
+
+Add this Production environment variable in Vercel:
+
+```text
+GITHUB_TOKEN=<a GitHub token with access to contribution data>
+```
+
+The token is read only by the serverless function and is never sent to the
+Angular bundle or returned in an API response. If it is omitted, the function
+tries GitHub's public contributions page without authentication.
+
 ---
 
 ## Where the data comes from
@@ -68,19 +89,17 @@ to `api.github.com`.
 GitHub has no public REST endpoint for the contribution calendar. The app uses
 two live sources, in order:
 
-1. **Official GraphQL API** — `POST https://api.github.com/graphql` with the
-   `user.contributionsCollection` query. Requires a personal access token
-   (`read:user` scope); paste it into the **Contribution data source** dialog
-   (the small badge next to the chart headline). It is stored in
-   `localStorage` and never leaves the browser.
+1. **Official GraphQL API** — the Vercel function calls
+   `POST https://api.github.com/graphql` with the server-side `GITHUB_TOKEN`.
 2. **Public contributions page** — `https://github.com/users/:user/contributions`.
    That response carries **no CORS headers**, so the browser cannot read it.
    The bundled Node server (`server/server.mjs`) fetches it, parses the
    `<td data-date data-level>` cells plus the day tool-tips, and returns
    clean JSON on `/api/contributions/:user`.
 
-If both sources fail the app falls back to deterministic mock data so the UI
-is never empty, and says so in the badge above the chart.
+If the server endpoint fails, the app falls back to deterministic mock data so
+the UI is never empty and displays the fallback notification. A server failure
+is never reported as live data.
 
 The chart itself is drawn with **Apache ECharts** (`echarts/core` +
 `CalendarComponent` + `HeatmapChart` + `VisualMapComponent`, tree-shaken) using
@@ -123,8 +142,7 @@ src/app/
 │   ├── models/github.models.ts         # response models + language colours
 │   └── services/
 │       ├── github-api.service.ts       # REST wrapper (proxy first, direct fallback) + GraphQL
-│       ├── contribution.service.ts     # GraphQL → proxy → mock chain, quartile levels
-│       ├── github-token.service.ts     # optional PAT, persisted in localStorage
+│       ├── contribution.service.ts     # server endpoint → mock fallback, quartile levels
 │       └── toast.service.ts            # transient notifications
 ├── features/
 │   ├── profile-page/                   # orchestrator: tabs, year switch, token dialog
