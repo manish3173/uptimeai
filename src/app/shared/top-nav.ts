@@ -1,6 +1,18 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  input,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
 
 import { Icon } from './icon';
+
+const GITHUB_MARK =
+  'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png';
 
 /**
  * GitHub-style global header navigation.
@@ -53,7 +65,16 @@ import { Icon } from './icon';
             <app-icon name="bell" />
           </button>
           <button class="top-nav__avatar" type="button" aria-label="Your user profile">
-            <img [src]="avatarUrl()" [alt]="username()" width="32" height="32" />
+            @if (resolvedAvatar()) {
+              <img
+                [src]="resolvedAvatar()"
+                [alt]="username() || 'Profile'"
+                width="32"
+                height="32"
+                referrerpolicy="no-referrer"
+                (error)="onAvatarError()"
+              />
+            }
           </button>
         </div>
       </div>
@@ -192,11 +213,12 @@ import { Icon } from './icon';
       border: 1px solid var(--border-default);
       padding: 0;
       margin-left: 4px;
-      background: none;
+      background-color: var(--canvas-subtle);
       cursor: pointer;
     }
 
     .top-nav__avatar img {
+      display: block;
       width: 100%;
       height: 100%;
       object-fit: cover;
@@ -235,9 +257,34 @@ export class TopNav {
   readonly search = output<string>();
 
   readonly query = signal('');
+  private readonly avatarFailed = signal(false);
+
+  constructor() {
+    effect(() => {
+      this.avatarUrl();
+      this.username();
+      untracked(() => this.avatarFailed.set(false));
+    });
+  }
+
+  protected readonly resolvedAvatar = computed(() => {
+    if (this.avatarFailed()) return GITHUB_MARK;
+
+    const explicit = this.avatarUrl().trim();
+    if (explicit) return explicit;
+
+    const login = this.username().trim();
+    if (login) return `https://github.com/${encodeURIComponent(login)}.png?size=40`;
+
+    return GITHUB_MARK;
+  });
 
   protected onSearch(event: Event): void {
     event.preventDefault();
     this.search.emit(this.query());
+  }
+
+  protected onAvatarError(): void {
+    this.avatarFailed.set(true);
   }
 }

@@ -8,10 +8,10 @@ import {
   GithubEvent,
   GithubOrg,
   GithubRepo,
-  GithubUser,
 } from '../../core/models/github.models';
 import { GithubApiService } from '../../core/services/github-api.service';
 import { ContributionService } from '../../core/services/contribution.service';
+import { CurrentUserService } from '../../core/services/current-user.service';
 import { ToastService } from '../../core/services/toast.service';
 import { MOCK_ACHIEVEMENTS, MOCK_PINNED_REPOS } from '../../core/data/mock-data';
 import { Icon } from '../../shared/icon';
@@ -22,9 +22,6 @@ import { PinnedRepos } from '../pinned-repos/pinned-repos';
 import { RepoList } from '../repo-list/repo-list';
 import { EmptyState } from '../empty-state/empty-state';
 import { ActivityOverview } from '../activity-overview/activity-overview';
-
-/** Default profile rendered by the app. */
-const DEFAULT_USERNAME = 'shreeramk';
 
 /**
  * Root page of the profile experience.
@@ -57,10 +54,11 @@ export class ProfilePage implements OnInit {
   private readonly api = inject(GithubApiService);
   private readonly contributions = inject(ContributionService);
   private readonly toast = inject(ToastService);
+  private readonly currentUser = inject(CurrentUserService);
 
-  readonly username = signal(DEFAULT_USERNAME);
+  readonly username = this.currentUser.username;
 
-  readonly user = signal<GithubUser | null>(null);
+  readonly user = this.currentUser.user;
   readonly orgs = signal<GithubOrg[]>([]);
   readonly repos = signal<GithubRepo[]>([]);
   readonly starred = signal<GithubRepo[]>([]);
