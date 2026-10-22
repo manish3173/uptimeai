@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { finalize } from 'rxjs';
 
@@ -41,7 +40,6 @@ const DEFAULT_USERNAME = 'shreeramk';
 @Component({
   selector: 'app-profile-page',
   imports: [
-    FormsModule,
     Icon,
     ProfileSidebar,
     ProfileTabs,
@@ -80,10 +78,6 @@ export class ProfilePage implements OnInit {
   /** Public event stream — powers the "Activity overview" panel. */
   readonly events = signal<GithubEvent[]>([]);
 
-  /** Dialog for the optional GitHub personal access token. */
-  readonly tokenDialogOpen = signal(false);
-  readonly tokenInput = signal('');
-
   /** Banner shown when the GitHub REST API could not be reached. */
   readonly apiNotice = signal<string | null>(null);
 
@@ -116,7 +110,6 @@ export class ProfilePage implements OnInit {
   );
 
   ngOnInit(): void {
-    this.tokenInput.set(this.contributions.getToken() ?? '');
     this.loadProfile();
     this.loadContributions();
     this.loadEvents();
@@ -253,29 +246,6 @@ export class ProfilePage implements OnInit {
     this.loadContributions();
   }
 
-  protected openTokenDialog(): void {
-    this.tokenInput.set(this.contributions.getToken() ?? '');
-    this.tokenDialogOpen.set(true);
-  }
-
-  protected closeTokenDialog(): void {
-    this.tokenDialogOpen.set(false);
-  }
-
-  protected saveToken(): void {
-    this.contributions.setToken(this.tokenInput());
-    this.tokenDialogOpen.set(false);
-    this.toast.show(
-      this.tokenInput()
-        ? 'Token saved — reloading live data from the GitHub API.'
-        : 'Token cleared — falling back to the public contributions API.',
-      'success',
-    );
-    // The token lifts the REST rate limit as well, so reload everything.
-    this.loadProfile();
-    this.loadContributions();
-    this.loadEvents();
-  }
 }
 
 /** Turn a failed REST call into a message the user can act on. */

@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable, catchError, from, map, of, switchMap } from 'rxjs';
+import { Observable, catchError, map, of } from 'rxjs';
 
 import {
   ContributionCalendar,
@@ -8,7 +8,6 @@ import {
   ContributionResult,
 } from '../models/github.models';
 import { GithubApiService } from './github-api.service';
-import { GithubTokenService } from './github-token.service';
 
 /** Shape returned by the bundled contribution proxy (`server/server.mjs`). */
 interface ProxyContributionResponse {
@@ -24,35 +23,16 @@ interface ProxyContributionResponse {
 /**
  * Loads the GitHub contribution calendar.
  *
- * Two live sources are supported, tried in order:
- *
- * 1. **GitHub GraphQL API** (`https://api.github.com/graphql`) — the official
- *    endpoint for contribution data (`user.contributionsCollection`). It
- *    requires a personal access token, which the user can supply from the UI.
- * 2. **Contribution proxy** (`/api/contributions/:user`) — the public
- *    `https://github.com/users/:user/contributions` calendar, normalised to
- *    JSON by the small Node server shipped with this project. This endpoint
- *    does not send CORS headers, so it has to be called server side.
- *
- * If both fail the app falls back to deterministic mock data so the UI is
- * never empty.
+ * The live source is the same-origin `/api/contributions/:user` endpoint. In
+ * production it is a Vercel function; locally it is handled by the bundled
+ * Node server. The server uses `GITHUB_TOKEN` for GraphQL when configured and
+ * otherwise falls back to GitHub's public contributions page.
+ * If the endpoint fails the app falls back to deterministic mock data so the
+ * UI is never empty.
  */
 @Injectable({ providedIn: 'root' })
 export class ContributionService {
   private readonly http = inject(HttpClient);
-  private readonly api = inject(GithubApiService);
-  private readonly tokens = inject(GithubTokenService);
-
-  /** Read a stored PAT (if the user provided one). */
-  getToken(): string | null {
-    return this.tokens.get();
-  }
-
-  /** Persist / clear the optional personal access token. */
-  setToken(token: string | null): void {
-    this.tokens.set(token);
-  }
-
   /**
    * Fetch the contribution calendar for `username`.
    *
@@ -66,33 +46,9 @@ export class ContributionService {
     from: string | null = null,
     to: string | null = null,
   ): Observable<ContributionResult> {
-    const token = this.getToken();
-
-    const graphql$ = token
-      ? this.api.getContributionsCollection(username, from ?? '', to ?? '', token).pipe(
-          map((collection) => {
-            const days = GithubApiService.flattenContributionDays(collection.weeks);
-            const withLevels = assignLevels(days);
-            const { total, levelCounts } = GithubApiService.summarise(withLevels);
-            const calendar: ContributionCalendar = {
-              username,
-              from: withLevels[0]?.date ?? '',
-              to: withLevels[withLevels.length - 1]?.date ?? '',
-              days: withLevels,
-              total,
-              levelCounts,
-            };
-            return {
-              calendar,
-              source: 'graphql' as const,
-              label: 'GitHub GraphQL API · contributionsCollection',
-            };
-          }),
-          catchError(() => this.loadFromProxy(username, from, to)),
-        )
-      : this.loadFromProxy(username, from, to);
-
-    return graphql$.pipe(catchError(() => of(this.mockResult(username, from, to))));
+    return this.loadFromProxy(username, from, to).pipe(
+      catchError(() => of(this.mockResult(username, from, to))),
+    );
   }
 
   /** Source 2 — the bundled proxy that normalises GitHub's calendar page. */
@@ -124,8 +80,10 @@ export class ContributionService {
           };
           return {
             calendar,
-            source: 'rest-proxy' as const,
-            label: 'GitHub contributions API · live calendar',
+            source: res.source === 'graphql' ? ('graphql' as const) : ('rest-proxy' as const),
+            label: res.source === 'graphql'
+              ? 'GitHub GraphQL API · live calendar'
+              : 'GitHub contributions API · live calendar',
           };
         }),
       );

@@ -159,15 +159,6 @@ function countWeeks(from: string, to: string): number {
           >
             <app-icon name="sync" />
           </button>
-          <button
-            type="button"
-            class="contrib__refresh"
-            (click)="sourceClick.emit()"
-            aria-label="Configure the contribution data source"
-            title="Configure the contribution data source"
-          >
-            <app-icon name="lock" />
-          </button>
         </div>
       </div>
 
@@ -175,12 +166,7 @@ function countWeeks(from: string, to: string): number {
         @if (loading()) {
           <div class="contrib-card__state" role="status">Loading contributions…</div>
         } @else if (!calendar()) {
-          <div class="contrib-card__state">
-            <p>No contribution data available.</p>
-            <button type="button" class="contrib-card__link" (click)="sourceClick.emit()">
-              Connect a GitHub token
-            </button>
-          </div>
+          <div class="contrib-card__state">No contribution data available.</div>
         } @else {
           <div class="contrib-card__chart-scroll">
             <div
@@ -369,7 +355,6 @@ export class ContributionGraph implements AfterViewInit, OnChanges, OnDestroy {
 
   readonly yearChange = output<number>();
   readonly refresh = output<void>();
-  readonly sourceClick = output<void>();
 
   protected readonly levelColors = LEVEL_COLORS;
   protected readonly chartHeight = CALENDAR_TOP + CALENDAR_HEIGHT;

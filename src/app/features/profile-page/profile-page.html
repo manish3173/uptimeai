@@ -13,9 +13,6 @@
       <div class="api-notice" role="status">
         <app-icon name="info" />
         <span>{{ notice }}</span>
-        <button type="button" class="api-notice__action" (click)="openTokenDialog()">
-          Add token
-        </button>
       </div>
     }
 
@@ -36,7 +33,6 @@
           [selectedYear]="selectedYear()"
           (yearChange)="onYearChange($event)"
           (refresh)="refreshContributions()"
-          (sourceClick)="openTokenDialog()"
         />
 
         <app-activity-overview
@@ -73,44 +69,3 @@
     }
   </main>
 </div>
-
-<!-- ======================= Token dialog ======================= -->
-@if (tokenDialogOpen()) {
-  <div class="modal-backdrop" (click)="closeTokenDialog()"></div>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="token-dialog-title">
-    <div class="modal__head">
-      <h2 id="token-dialog-title" class="modal__title">Contribution data source</h2>
-      <button type="button" class="modal__close" (click)="closeTokenDialog()" aria-label="Close">
-        <app-icon name="close" />
-      </button>
-    </div>
-
-    <div class="modal__body">
-      <p class="modal__text">
-        The contribution calendar is read from the GitHub GraphQL API
-        (<code>contributionsCollection</code>) when a personal access token with the
-        <code>read:user</code> scope is supplied.
-      </p>
-      <p class="modal__text modal__text--muted">
-        Without a token the app falls back to the public GitHub contributions API, which is
-        normalised by the bundled Node proxy.
-      </p>
-
-      <label class="modal__label" for="token-input">Personal access token</label>
-      <input
-        id="token-input"
-        class="modal__input"
-        type="password"
-        placeholder="ghp_…"
-        [ngModel]="tokenInput()"
-        (ngModelChange)="tokenInput.set($event)"
-        autocomplete="off"
-      />
-    </div>
-
-    <div class="modal__foot">
-      <button type="button" class="btn btn--primary" (click)="saveToken()">Save token</button>
-      <button type="button" class="btn" (click)="closeTokenDialog()">Cancel</button>
-    </div>
-  </div>
-}
