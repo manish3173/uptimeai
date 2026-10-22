@@ -1,0 +1,18 @@
+<app-top-nav />
+
+<router-outlet />
+
+<!-- ======================= Toasts ======================= -->
+@if (toast.toasts().length) {
+  <div class="toasts" role="status" aria-live="polite">
+    @for (item of toast.toasts(); track item.id) {
+      <div class="toasts__item" [attr.data-tone]="item.tone">
+        <app-icon [name]="item.tone === 'danger' ? 'close' : 'check'" />
+        <span>{{ item.message }}</span>
+        <button type="button" class="toasts__close" (click)="toast.dismiss(item.id)" aria-label="Dismiss">
+          <app-icon name="close" />
+        </button>
+      </div>
+    }
+  </div>
+}

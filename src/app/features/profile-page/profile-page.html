@@ -1,0 +1,116 @@
+<div class="profile-page">
+  <!-- ======================= Left panel ======================= -->
+  <app-profile-sidebar
+    [user]="user()"
+    [orgs]="orgs()"
+    [achievements]="achievements()"
+    [linkedinHandle]="linkedinHandle"
+  />
+
+  <!-- ======================= Right panel ====================== -->
+  <main class="profile-main">
+    @if (apiNotice(); as notice) {
+      <div class="api-notice" role="status">
+        <app-icon name="info" />
+        <span>{{ notice }}</span>
+        <button type="button" class="api-notice__action" (click)="openTokenDialog()">
+          Add token
+        </button>
+      </div>
+    }
+
+    <app-profile-tabs
+      [tabs]="tabs()"
+      [activeTab]="activeTab()"
+      (tabChange)="selectTab($event)"
+    />
+
+    @switch (activeTab()) {
+      @case ('overview') {
+        <app-pinned-repos [repos]="mockPinned" />
+
+        <app-contribution-graph
+          [calendar]="contribution()?.calendar ?? null"
+          [loading]="contributionLoading()"
+          [years]="years()"
+          [selectedYear]="selectedYear()"
+          (yearChange)="onYearChange($event)"
+          (refresh)="refreshContributions()"
+          (sourceClick)="openTokenDialog()"
+        />
+
+        <app-activity-overview
+          [calendar]="contribution()?.calendar ?? null"
+          [events]="events()"
+        />
+      }
+
+      @case ('repositories') {
+        <app-repo-list [repos]="repos()" [loading]="reposLoading()" />
+      }
+
+      @case ('projects') {
+        <app-empty-state
+          icon="project"
+          title="No projects yet"
+          description="Projects you create or are a member of will show up here. This tab is wired up and ready for the GitHub Projects API."
+          hint="GitHub REST API · Projects are still in beta and require a preview accept header."
+        />
+      }
+
+      @case ('packages') {
+        <app-empty-state
+          icon="package"
+          title="No packages published"
+          description="Packages published with GitHub Packages will show up here. This tab is wired up and ready for the GitHub Packages API."
+          hint="GitHub REST API · GET /users/{username}/packages"
+        />
+      }
+
+      @case ('stars') {
+        <app-repo-list [repos]="starred()" [loading]="starredLoading()" />
+      }
+    }
+  </main>
+</div>
+
+<!-- ======================= Token dialog ======================= -->
+@if (tokenDialogOpen()) {
+  <div class="modal-backdrop" (click)="closeTokenDialog()"></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="token-dialog-title">
+    <div class="modal__head">
+      <h2 id="token-dialog-title" class="modal__title">Contribution data source</h2>
+      <button type="button" class="modal__close" (click)="closeTokenDialog()" aria-label="Close">
+        <app-icon name="close" />
+      </button>
+    </div>
+
+    <div class="modal__body">
+      <p class="modal__text">
+        The contribution calendar is read from the GitHub GraphQL API
+        (<code>contributionsCollection</code>) when a personal access token with the
+        <code>read:user</code> scope is supplied.
+      </p>
+      <p class="modal__text modal__text--muted">
+        Without a token the app falls back to the public GitHub contributions API, which is
+        normalised by the bundled Node proxy.
+      </p>
+
+      <label class="modal__label" for="token-input">Personal access token</label>
+      <input
+        id="token-input"
+        class="modal__input"
+        type="password"
+        placeholder="ghp_…"
+        [ngModel]="tokenInput()"
+        (ngModelChange)="tokenInput.set($event)"
+        autocomplete="off"
+      />
+    </div>
+
+    <div class="modal__foot">
+      <button type="button" class="btn btn--primary" (click)="saveToken()">Save token</button>
+      <button type="button" class="btn" (click)="closeTokenDialog()">Cancel</button>
+    </div>
+  </div>
+}

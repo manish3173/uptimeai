@@ -1,0 +1,218 @@
+/* ==========================================================================
+   Profile page layout
+   ========================================================================== */
+
+.profile-page {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  gap: 16px;
+  width: 100%;
+  max-width: var(--container-width);
+  margin: 0 auto;
+  padding: 24px 24px 64px;
+  align-items: start;
+}
+
+.profile-main {
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* ---------- API notice ------------------------------------------------------ */
+
+.api-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  border: 1px solid var(--attention-muted, var(--border-default));
+  border-radius: var(--radius-md);
+  background-color: var(--attention-subtle, var(--canvas-subtle));
+  color: var(--fg-default);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.api-notice app-icon {
+  margin-top: 2px;
+  color: var(--attention-fg, var(--fg-muted));
+}
+
+.api-notice span {
+  flex: 1;
+  min-width: 0;
+}
+
+.api-notice__action {
+  flex-shrink: 0;
+  padding: 2px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  background-color: var(--canvas-default);
+  color: var(--accent-fg);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.api-notice__action:hover {
+  background-color: var(--canvas-subtle);
+}
+
+/* ---------- Modal --------------------------------------------------------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(31, 35, 40, 0.5);
+  z-index: 100;
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 101;
+  width: min(520px, calc(100vw - 32px));
+  background-color: var(--canvas-overlay);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.modal__title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.modal__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.modal__close:hover {
+  background-color: var(--canvas-subtle);
+  color: var(--fg-default);
+}
+
+.modal__body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal__text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--fg-default);
+}
+
+.modal__text--muted {
+  color: var(--fg-muted);
+  font-size: 13px;
+}
+
+.modal__text code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background-color: var(--canvas-subtle);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+.modal__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  margin-top: 4px;
+}
+
+.modal__input {
+  width: 100%;
+  padding: 6px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--fg-default);
+  background-color: var(--canvas-default);
+  outline: none;
+}
+
+.modal__input:focus {
+  border-color: var(--accent-fg);
+  box-shadow: 0 0 0 3px var(--accent-muted);
+}
+
+.modal__foot {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 16px;
+  background-color: var(--canvas-subtle);
+  border-top: 1px solid var(--border-default);
+}
+
+.btn {
+  padding: 5px 16px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background-color: var(--canvas-default);
+  color: var(--fg-default);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background-color: var(--canvas-subtle);
+}
+
+.btn--primary {
+  background-color: var(--success-fg);
+  border-color: rgba(27, 31, 36, 0.15);
+  color: #ffffff;
+}
+
+.btn--primary:hover {
+  background-color: var(--success-emphasis);
+}
+
+/* ---------- Responsive ---------------------------------------------------- */
+
+/* GitHub keeps the two-column layout down to 768px. */
+@media (max-width: 767px) {
+  .profile-page {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    padding: 16px 16px 48px;
+  }
+}
+
+@media (max-width: 479px) {
+  .profile-page {
+    padding: 12px 12px 40px;
+  }
+}
